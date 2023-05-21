@@ -32,6 +32,8 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     },
   } = layer;
 
+  // Input
+
   input.keyboard$.subscribe((event) => {
     if (event.keyCode != 32) return;
     if (!event.isDown) return;
@@ -61,6 +63,8 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     if (!hasComponent(Cartridge, entity)) return;
     playCartridge(BigInt(entity), []);
   });
+
+  // Utils
 
   function numToEntity(id: bigint): Entity {
     let idStr = id.toString(16);
@@ -106,6 +110,8 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     }
     return pos;
   }
+
+  // Systems
 
   defineEnterSystem(world, [Has(Cartridge)], ({ entity }) => {
     const pos = cartridgePosition(entity);
