@@ -16,7 +16,7 @@ import {
 import { utils } from "ethers";
 
 import { PhaserLayer } from "../createPhaserLayer";
-import { TILE_HEIGHT, TILE_WIDTH } from "../constants";
+import { TILE_HEIGHT, TILE_WIDTH, Animations } from "../constants";
 import { tile } from "@latticexyz/utils";
 
 export function createCartridgeSystem(layer: PhaserLayer) {
@@ -93,8 +93,8 @@ export function createCartridgeSystem(layer: PhaserLayer) {
         positionComponent,
         numToEntity(cartridge.parent)
       );
+      const x = parentPos.x + 2;
       for (let i = 0; i < 4; i++) {
-        const x = parentPos.x + 2;
         const y = parentPos.y + randomInt(-2, 2) * 2;
         const tilePos = { x, y };
         const entities = getEntitiesWithValue(positionComponent, tilePos);
@@ -111,16 +111,15 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     const pos = cartridgePosition(entity);
     setComponent(positionComponent, entity, pos);
     const cartridge = getComponentValueStrict(Cartridge, entity);
-    const cartridgeObj = objectPool.get(entity, "Rectangle");
+    const cartridgeObj = objectPool.get(entity, "Sprite");
     cartridgeObj.setComponent({
       id: "animation",
-      once: (rect) => {
-        rect.setDepth(1);
-        rect.setSize(32, 32);
+      once: (sprite) => {
+        sprite.setDepth(1);
         if (cartridge.parent === 0n) {
-          rect.setFillStyle(0XEB6FC4);
+          sprite.play(Animations.GenesisCartridge);
         } else {
-          rect.setFillStyle(0X84D7D0);
+          sprite.play(Animations.Cartridge);
         }
       },
     });
@@ -130,12 +129,12 @@ export function createCartridgeSystem(layer: PhaserLayer) {
   defineSystem(world, [Has(positionComponent)], ({ entity }) => {
     const tilePos = getComponentValueStrict(positionComponent, entity);
     const pixelPos = tileCoordToPixelCoord(tilePos, TILE_WIDTH, TILE_HEIGHT);
-    const cartridgeObj = objectPool.get(entity, "Rectangle");
+    const cartridgeObj = objectPool.get(entity, "Sprite");
     const cartridge = getComponentValueStrict(Cartridge, entity);
     cartridgeObj.setComponent({
       id: "position",
-      once: (rect) => {
-        rect.setPosition(pixelPos.x, pixelPos.y);
+      once: (sprite) => {
+        sprite.setPosition(pixelPos.x, pixelPos.y);
         if (cartridge.author === playerEntity) {
           // camera.centerOn(pixelPos.x, pixelPos.y);
         }
@@ -159,7 +158,7 @@ export function createCartridgeSystem(layer: PhaserLayer) {
       id: "animation",
       once: (line) => {
         line.setDepth(0);
-        line.setStrokeStyle(4, 0XCCCFC9);
+        line.setStrokeStyle(4, 0xcccfc9);
         line.setTo(
           parentPixelPos.x + TILE_WIDTH / 2,
           parentPixelPos.y + TILE_HEIGHT / 2,

@@ -8,6 +8,8 @@ export enum Maps {
 
 export enum Animations {
   SwordsmanIdle = "SwordsmanIdle",
+  GenesisCartridge = "GenesisCartridge",
+  Cartridge = "Cartridge",
 }
 export enum Sprites {
   Soldier,

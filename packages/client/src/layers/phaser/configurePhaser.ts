@@ -66,6 +66,26 @@ export const phaserConfig = {
           prefix: "sprites/soldier/idle/",
           suffix: ".png",
         },
+        {
+          key: Animations.GenesisCartridge,
+          assetKey: Assets.MainAtlas,
+          startFrame: 0,
+          endFrame: 0,
+          frameRate: 1,
+          repeat: -1,
+          prefix: "sprites/cartridge/genesis/",
+          suffix: ".png",
+        },
+        {
+          key: Animations.Cartridge,
+          assetKey: Assets.MainAtlas,
+          startFrame: 0,
+          endFrame: 0,
+          frameRate: 1,
+          repeat: -1,
+          prefix: "sprites/cartridge/cartridge/",
+          suffix: ".png",
+        },
       ],
       tilesets: {
         Default: {
@@ -84,7 +104,7 @@ export const phaserConfig = {
   cameraConfig: defineCameraConfig({
     pinchSpeed: 1,
     wheelSpeed: 1,
-    maxZoom: 3,
+    maxZoom: 5,
     minZoom: 1,
   }),
   cullingChunkSize: TILE_HEIGHT * 16,
