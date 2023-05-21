@@ -17,6 +17,7 @@ import { utils } from "ethers";
 
 import { PhaserLayer } from "../createPhaserLayer";
 import { TILE_HEIGHT, TILE_WIDTH } from "../constants";
+import { tile } from "@latticexyz/utils";
 
 export function createCartridgeSystem(layer: PhaserLayer) {
   const {
@@ -27,7 +28,7 @@ export function createCartridgeSystem(layer: PhaserLayer) {
       playerEntity,
     },
     scenes: {
-      Main: { objectPool, input, camera },
+      Main: { objectPool, input },
     },
   } = layer;
 
@@ -54,13 +55,25 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     const y = pointer.worldY;
     if (x === undefined || y === undefined) return;
     const tilePos = pixelCoordToTileCoord({ x, y }, TILE_WIDTH, TILE_HEIGHT);
-    console.log("CLICK", tilePos);
     const entities = getEntitiesWithValue(positionComponent, tilePos);
     if (entities.size === 0) return;
     const entity = entities.values().next().value as Entity;
     if (!hasComponent(Cartridge, entity)) return;
-    playCartridge(BigInt("0x" + entity), []);
+    playCartridge(BigInt(entity), []);
   });
+
+  function numToEntity(id: bigint): Entity {
+    let idStr = id.toString(16);
+    console.log("numToEntity", idStr);
+    if (idStr.length % 2 !== 0) {
+      idStr = `0x0${idStr}`;
+    } else {
+      idStr = `0x${idStr}`;
+    }
+    console.log("numToEntity", idStr);
+    console.log("");
+    return idStr as Entity;
+  }
 
   function randomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -68,46 +81,91 @@ export function createCartridgeSystem(layer: PhaserLayer) {
 
   function cartridgePosition(entity: Entity): { x: number; y: number } {
     const cartridge = getComponentValueStrict(Cartridge, entity);
+    if (cartridge === undefined) {
+      throw new Error("Cartridge not found");
+    }
     let pos = { x: 0, y: 0 };
     if (cartridge.parent === 0n) {
-      pos = { x: randomInt(-100, 100), y: randomInt(-100, 100) };
+      const entityNum = Number(BigInt(entity).toString(10));
+      pos = { x: 0, y: entityNum * 16 };
     } else {
       const parentPos = getComponentValueStrict(
         positionComponent,
-        cartridge.parent.toString(16) as Entity
+        numToEntity(cartridge.parent)
       );
-      pos = { x: parentPos.x + 2, y: parentPos.y + randomInt(-10, 10) * 2 };
+      for (let i = 0; i < 4; i++) {
+        const x = parentPos.x + 2;
+        const y = parentPos.y + randomInt(-2, 2) * 2;
+        const tilePos = { x, y };
+        const entities = getEntitiesWithValue(positionComponent, tilePos);
+        if (entities.size === 0) {
+          pos = { x, y };
+          break;
+        }
+      }
     }
     return pos;
   }
 
   defineEnterSystem(world, [Has(Cartridge)], ({ entity }) => {
-    console.log("ENTER", entity);
-    // const pos = cartridgePosition(entity);
-    const pos = { x: 0, y: 0 };
+    const pos = cartridgePosition(entity);
     setComponent(positionComponent, entity, pos);
+    const cartridge = getComponentValueStrict(Cartridge, entity);
     const cartridgeObj = objectPool.get(entity, "Rectangle");
     cartridgeObj.setComponent({
       id: "animation",
       once: (rect) => {
-        rect.setSize(50, 50);
-        rect.setFillStyle(0x00ff00);
+        rect.setDepth(1);
+        rect.setSize(32, 32);
+        if (cartridge.parent === 0n) {
+          rect.setFillStyle(0XEB6FC4);
+        } else {
+          rect.setFillStyle(0X84D7D0);
+        }
       },
     });
   });
 
+  // TODO: get value from update
   defineSystem(world, [Has(positionComponent)], ({ entity }) => {
-    console.log("UPDATE", entity);
     const tilePos = getComponentValueStrict(positionComponent, entity);
     const pixelPos = tileCoordToPixelCoord(tilePos, TILE_WIDTH, TILE_HEIGHT);
     const cartridgeObj = objectPool.get(entity, "Rectangle");
+    const cartridge = getComponentValueStrict(Cartridge, entity);
     cartridgeObj.setComponent({
       id: "position",
       once: (rect) => {
         rect.setPosition(pixelPos.x, pixelPos.y);
-        if (entity === playerEntity) {
-          camera.centerOn(pixelPos.x, pixelPos.y);
+        if (cartridge.author === playerEntity) {
+          // camera.centerOn(pixelPos.x, pixelPos.y);
         }
+      },
+    });
+    if (cartridge.parent === 0n) {
+      return;
+    }
+    const parentPos = getComponentValueStrict(
+      positionComponent,
+      numToEntity(cartridge.parent)
+    );
+    const parentPixelPos = tileCoordToPixelCoord(
+      parentPos,
+      TILE_WIDTH,
+      TILE_HEIGHT
+    );
+    const lineEntity = ((entity as string) + "ffffffff") as Entity;
+    const lineObj = objectPool.get(lineEntity, "Line");
+    lineObj.setComponent({
+      id: "animation",
+      once: (line) => {
+        line.setDepth(0);
+        line.setStrokeStyle(4, 0XCCCFC9);
+        line.setTo(
+          parentPixelPos.x + TILE_WIDTH / 2,
+          parentPixelPos.y + TILE_HEIGHT / 2,
+          pixelPos.x + TILE_WIDTH / 2,
+          pixelPos.y + TILE_HEIGHT / 2
+        );
       },
     });
   });

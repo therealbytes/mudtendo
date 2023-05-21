@@ -15,7 +15,7 @@ const mainMap = defineMapConfig({
   chunkSize: TILE_WIDTH * 64, // tile size * tile amount
   tileWidth: TILE_WIDTH,
   tileHeight: TILE_HEIGHT,
-  backgroundTile: [Tileset.Grass],
+  backgroundTile: [Tileset.BG],
   animationInterval: ANIMATION_INTERVAL,
   tileAnimations: TileAnimations,
   layers: {

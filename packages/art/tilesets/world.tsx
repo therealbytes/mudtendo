@@ -16,4 +16,19 @@
    <property name="name" value="Forest"/>
   </properties>
  </tile>
+ <tile id="3">
+  <properties>
+   <property name="name" value="BG"/>
+  </properties>
+ </tile>
+ <tile id="4">
+  <properties>
+   <property name="name" value="Genesis"/>
+  </properties>
+ </tile>
+ <tile id="5">
+  <properties>
+   <property name="name" value="Cartridge"/>
+  </properties>
+ </tile>
 </tileset>

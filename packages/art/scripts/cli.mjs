@@ -1,8 +1,14 @@
 import { existsSync, statSync, readdirSync, readFileSync, readFile, writeFileSync } from "fs";
 import { resolve, dirname } from "path";
 import optimist from "optimist";
-import chalk from "chalk";
-const { yellowBright, redBright, white, magentaBright, greenBright } = chalk;
+// import chalk from "chalk";
+const { yellowBright, redBright, white, magentaBright, greenBright } = {
+  yellowBright: (s) => s,
+  redBright: (s) => s,
+  white: (s) => s,
+  magentaBright: (s) => s,
+  greenBright: (s) => s,
+};
 import texturePacker from "free-tex-packer-core";
 
 import appInfo from "../package.json" assert { type: "json" };
