@@ -1,21 +1,18 @@
-import { getComponentValue } from "@latticexyz/recs";
-import { awaitStreamValue } from "@latticexyz/utils";
-import { ClientComponents } from "./createClientComponents";
 import { SetupNetworkResult } from "./setupNetwork";
+import { ActionStruct } from "contracts/types/ethers-contracts/IWorld";
+import {  utils } from "ethers";
 
 export type SystemCalls = ReturnType<typeof createSystemCalls>;
 
-export function createSystemCalls(
-  { worldSend, txReduced$, singletonEntity }: SetupNetworkResult,
-  { Counter }: ClientComponents
-) {
-  const increment = async () => {
-    const tx = await worldSend("increment", []);
-    await awaitStreamValue(txReduced$, (txHash) => txHash === tx.hash);
-    return getComponentValue(Counter, singletonEntity);
+export function createSystemCalls({ worldSend }: SetupNetworkResult) {
+  const createCartridge = async (staticHash: utils.BytesLike, dynHash: utils.BytesLike) => {
+    worldSend("createCartridge", [staticHash, dynHash]);
   };
-
+  const playCartridge = async (id: bigint, activity: ActionStruct[]) => {
+    worldSend("playCartridge", [id, activity]);
+  };
   return {
-    increment,
+    playCartridge,
+    createCartridge,
   };
 }

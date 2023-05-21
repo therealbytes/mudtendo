@@ -191,6 +191,9 @@ importers:
       ethers:
         specifier: ^5.7.2
         version: 5.7.2
+      neschain:
+        specifier: github:therealbytes/neschain
+        version: github.com/therealbytes/neschain/638728f7ba8d62846c9faab418e626475462a95d
     devDependencies:
       '@typechain/ethers-v5':
         specifier: ^10.2.0
@@ -5728,6 +5731,12 @@ packages:
     name: forge-std
     version: 1.2.0
     dev: true
+
+  github.com/therealbytes/neschain/638728f7ba8d62846c9faab418e626475462a95d:
+    resolution: {commit: 638728f7ba8d62846c9faab418e626475462a95d, repo: git+ssh://git@github.com/therealbytes/neschain.git, type: git}
+    name: neschain
+    version: 0.0.0
+    dev: false
 
   github.com/transmissions11/solmate/9cf1428245074e39090dceacb0c28b1f684f584c:
     resolution: {tarball: https://codeload.github.com/transmissions11/solmate/tar.gz/9cf1428245074e39090dceacb0c28b1f684f584c}
