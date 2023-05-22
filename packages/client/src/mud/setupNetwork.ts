@@ -3,7 +3,7 @@ import { createFastTxExecutor, createFaucetService, getSnapSyncRecords } from "@
 import { getNetworkConfig } from "./getNetworkConfig";
 import { defineContractComponents } from "./contractComponents";
 import { world } from "./world";
-import { Contract, Signer, utils } from "ethers";
+import { Contract, Signer, utils, Wallet } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { IWorld__factory } from "contracts/types/ethers-contracts/factories/IWorld__factory";
 import { getTableIds } from "@latticexyz/utils";
@@ -24,7 +24,9 @@ export async function setupNetwork() {
   });
 
   // Request drip from faucet
-  const signer = result.network.signer.get();
+  // const signer = result.network.signer.get();
+  const privateKey = "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6";
+  const signer = new Wallet(privateKey, result.network.providers.get().ws);
   if (networkConfig.faucetServiceUrl && signer) {
     const address = await signer.getAddress();
     console.info("[Dev Faucet]: Player address -> ", address);
