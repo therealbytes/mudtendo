@@ -104,7 +104,7 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     setTimeout(() => {
       nes.togglePause();
       playCartridge(BigInt(entity), []);
-    }, 10000);
+    }, 18000);
   });
 
   // Utils
