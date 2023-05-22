@@ -1,7 +1,7 @@
 import { MUDChain, latticeTestnet } from "@latticexyz/common/chains";
 import { foundry } from "@wagmi/chains";
 
-const opDevnet = {
+export const opDevnet = {
   name: "Optimism Devnet",
   id: 901,
   network: "op-devnet",
