@@ -1,6 +1,6 @@
 import { SetupContractConfig, getBurnerWallet } from "@latticexyz/std-client";
 import worldsJson from "contracts/worlds.json";
-import { supportedChains } from "./supportedChains";
+import { supportedChains, opDevnet } from "./supportedChains";
 
 const worlds = worldsJson as Partial<Record<string, { address: string; blockNumber?: number }>>;
 
@@ -49,5 +49,6 @@ export async function getNetworkConfig(): Promise<NetworkConfig> {
     initialBlockNumber,
     snapSync: params.get("snapSync") === "true",
     disableCache: params.get("cache") === "false",
+    chainConfig: opDevnet,
   };
 }

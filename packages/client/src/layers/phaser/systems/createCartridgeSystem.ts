@@ -85,7 +85,7 @@ export function createCartridgeSystem(layer: PhaserLayer) {
   const cachedHashes = new Set<string>();
 
   const marioStaticHash =
-    "0xebefff5d04586f1d5ba0d052d1a06f2535c5dd92be22c289295442b1048fe872";
+    "0xda2437bb81b1a07d5e2832768ba41f1a43cf060ba5a2db3ac0265361220ed82c";
 
   const marioDynHash =
     "0x4123f2d81428f7090218f975b941122f3797aeb8f97bf7d1ef6e87491c920a5c";
@@ -164,7 +164,7 @@ export function createCartridgeSystem(layer: PhaserLayer) {
       ];
       playCartridge(BigInt(entity), activity);
       playing = false;
-    }, 18000);
+    }, 1000);
   });
 
   // Utils
