@@ -42,7 +42,11 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     "function getPreimage(bytes32) view returns (bytes memory)",
     "function getPreimageSize(bytes32) view returns (uint256)",
   ];
-  const contract = new Contract("0x80", contractABI, provider);
+  const contract = new Contract(
+    "0x0000000000000000000000000000000000000080",
+    contractABI,
+    provider
+  );
 
   async function fetchPreimageFromChain(hash: Uint8Array): Promise<Uint8Array> {
     const hexHash = utils.hexlify(hash);
@@ -78,7 +82,7 @@ export function createCartridgeSystem(layer: PhaserLayer) {
       });
   }
 
-  const cachedHashes = new Set<Uint8Array>();
+  const cachedHashes = new Set<string>();
 
   const marioStaticHash =
     "0xebefff5d04586f1d5ba0d052d1a06f2535c5dd92be22c289295442b1048fe872";
@@ -95,10 +99,10 @@ export function createCartridgeSystem(layer: PhaserLayer) {
   // We load them from the server instead of the chain so we dev version works
   // without the custom chain.
   for (const hash of preimagesToPreload) {
+    if (cachedHashes.has(hash)) return;
     fetchPreimageFromServer(`public/preimages/${hash}.bin`).then((preimage) => {
       if (preimage.length == 0) return;
-      if (cachedHashes.has(preimage)) return;
-      cachedHashes.add(preimage);
+      cachedHashes.add(hash);
       nes.setPreimage(hexStringToUint8Array(hash), preimage);
     });
   }
@@ -113,8 +117,6 @@ export function createCartridgeSystem(layer: PhaserLayer) {
 
   let playing = false;
   input.pointerdown$.subscribe(async (event) => {
-    if (playing) return;
-    playing = true;
     const pointer = event.pointer;
     if (pointer === undefined) return;
     if (!pointer.isDown) return;
@@ -126,20 +128,26 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     if (entities.size === 0) return;
     const entity = entities.values().next().value as Entity;
     if (!hasComponent(Cartridge, entity)) return;
+
+    if (playing) return;
+    playing = true;
+    
     const cartridge = getComponentValueStrict(Cartridge, entity);
 
-    const staticHash = hexStringToUint8Array(cartridge.staticHash as string);
-    const dynHash = hexStringToUint8Array(cartridge.dynHash as string);
+    const staticHash = hexStringToUint8Array(cartridge.staticHash);
+    const dynHash = hexStringToUint8Array(cartridge.dynHash);
 
-    if (!cachedHashes.has(staticHash)) {
+    if (!cachedHashes.has(cartridge.staticHash)) {
+      console.log("fetching static hash", staticHash);
       const preimage = await fetchPreimageFromChain(staticHash);
       nes.setPreimage(staticHash, preimage);
-      cachedHashes.add(staticHash);
+      cachedHashes.add(cartridge.staticHash);
     }
-    if (!cachedHashes.has(dynHash)) {
+    if (!cachedHashes.has(cartridge.dynHash)) {
+      console.log("fetching dyn hash", dynHash);
       const preimage = await fetchPreimageFromChain(dynHash);
       nes.setPreimage(dynHash, preimage);
-      cachedHashes.add(dynHash);
+      cachedHashes.add(cartridge.dynHash);
     }
 
     nes.setCartridge(staticHash, dynHash);
@@ -152,8 +160,8 @@ export function createCartridgeSystem(layer: PhaserLayer) {
           button: 0n,
           press: false,
           duration: 100000n,
-        }
-      ]
+        },
+      ];
       playCartridge(BigInt(entity), activity);
       playing = false;
     }, 18000);
