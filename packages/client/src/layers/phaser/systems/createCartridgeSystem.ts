@@ -2,7 +2,6 @@ import {
   Has,
   defineEnterSystem,
   defineSystem,
-  defineUpdateSystem,
   getComponentValueStrict,
   getEntitiesWithValue,
   hasComponent,
@@ -17,7 +16,6 @@ import { utils } from "ethers";
 
 import { PhaserLayer } from "../createPhaserLayer";
 import { TILE_HEIGHT, TILE_WIDTH, Animations } from "../constants";
-import { tile } from "@latticexyz/utils";
 
 export function createCartridgeSystem(layer: PhaserLayer) {
   const {
@@ -26,27 +24,51 @@ export function createCartridgeSystem(layer: PhaserLayer) {
       components: { Cartridge, positionComponent },
       systemCalls: { createCartridge, playCartridge },
       playerEntity,
+      wasm: { api: nes },
     },
     scenes: {
-      Main: { objectPool, input },
+      Main: { objectPool, input, camera },
     },
   } = layer;
+
+  function hexToUint8Array(hexString: string): Uint8Array {
+    if (hexString.length % 2 !== 0) {
+      throw new Error("Invalid hex string");
+    }
+    if (hexString.substring(0, 2) === "0x") {
+      hexString = hexString.substring(2);
+    }
+    const bytes = new Uint8Array(hexString.length / 2);
+    for (let i = 0; i < hexString.length; i += 2) {
+      bytes[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
+    }
+    return bytes;
+  }
+
+  const marioStaticHash = hexToUint8Array(
+    "0xebefff5d04586f1d5ba0d052d1a06f2535c5dd92be22c289295442b1048fe872"
+  );
+  const marioDynHash = hexToUint8Array(
+    "0x4123f2d81428f7090218f975b941122f3797aeb8f97bf7d1ef6e87491c920a5c"
+  );
+
+  if (marioStaticHash === undefined || marioDynHash === undefined) {
+    throw new Error("Invalid hashes");
+  }
+
+  const cachedHashes = new Set<Uint8Array>();
+  cachedHashes.add(marioStaticHash);
+  cachedHashes.add(marioDynHash);
+
+  nes.start();
+  nes.togglePause();
 
   // Input
 
   input.keyboard$.subscribe((event) => {
     if (event.keyCode != 32) return;
     if (!event.isDown) return;
-    createCartridge(
-      utils.hexZeroPad(
-        "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
-        32
-      ),
-      utils.hexZeroPad(
-        "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
-        32
-      )
-    );
+    createCartridge(marioStaticHash, marioDynHash);
   });
 
   input.pointerdown$.subscribe((event) => {
@@ -61,21 +83,39 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     if (entities.size === 0) return;
     const entity = entities.values().next().value as Entity;
     if (!hasComponent(Cartridge, entity)) return;
-    playCartridge(BigInt(entity), []);
+    const cartridge = getComponentValueStrict(Cartridge, entity);
+
+    const staticHash = hexToUint8Array(cartridge.staticHash as string);
+    const dynHash = hexToUint8Array(cartridge.dynHash as string);
+
+    if (!cachedHashes.has(staticHash)) {
+      // ...
+    }
+    if (!cachedHashes.has(dynHash)) {
+      // ...
+    }
+
+    console.log("Playing cartridge...");
+    nes.togglePause();
+
+    console.log("Setting cartridge...");
+    nes.setCartridge(staticHash, dynHash);
+
+    setTimeout(() => {
+      nes.togglePause();
+      playCartridge(BigInt(entity), []);
+    }, 10000);
   });
 
   // Utils
 
   function numToEntity(id: bigint): Entity {
     let idStr = id.toString(16);
-    console.log("numToEntity", idStr);
     if (idStr.length % 2 !== 0) {
       idStr = `0x0${idStr}`;
     } else {
       idStr = `0x${idStr}`;
     }
-    console.log("numToEntity", idStr);
-    console.log("");
     return idStr as Entity;
   }
 
@@ -141,8 +181,8 @@ export function createCartridgeSystem(layer: PhaserLayer) {
       id: "position",
       once: (sprite) => {
         sprite.setPosition(pixelPos.x, pixelPos.y);
-        if (cartridge.author === playerEntity) {
-          // camera.centerOn(pixelPos.x, pixelPos.y);
+        if (cartridge.author === playerEntity && cartridge.parent === 0n) {
+          camera.centerOn(pixelPos.x, pixelPos.y);
         }
       },
     });
