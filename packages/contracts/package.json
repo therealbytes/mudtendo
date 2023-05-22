@@ -28,7 +28,8 @@
     "@latticexyz/std-contracts": "2.0.0-alpha.1.185",
     "@latticexyz/store": "2.0.0-alpha.1.185",
     "@latticexyz/world": "2.0.0-alpha.1.185",
-    "ethers": "^5.7.2"
+    "ethers": "^5.7.2",
+    "neschain": "github:therealbytes/neschain"
   },
   "devDependencies": {
     "@typechain/ethers-v5": "^10.2.0",
