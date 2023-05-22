@@ -14,7 +14,7 @@ library CartridgeLib {
         if (PC_ON) {
             newDynHash = NES(NES_ADDRESS).run(cartridge.staticHash, cartridge.dynHash, activity);
         } else {
-            newDynHash = bytes32(uint256(0xff));
+            newDynHash = cartridge.dynHash;
         }
         return create(author, id, cartridge.staticHash, newDynHash);
     }
