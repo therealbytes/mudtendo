@@ -16,6 +16,10 @@ import {
 import { PhaserLayer } from "../createPhaserLayer";
 import { TILE_HEIGHT, TILE_WIDTH, Animations } from "../constants";
 import { hexStringToUint8Array } from "@latticexyz/utils";
+import { ActionStruct } from "contracts/types/ethers-contracts/IWorld";
+import { providers, utils, Contract } from "ethers";
+
+const { WebSocketProvider } = providers;
 
 export function createCartridgeSystem(layer: PhaserLayer) {
   const {
@@ -31,6 +35,22 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     },
   } = layer;
 
+  // Ugly! Ugly! Ultra ugly!
+
+  const provider = new WebSocketProvider("ws://localhost:9546");
+  const contractABI = [
+    "function getPreimage(bytes32) view returns (bytes memory)",
+    "function getPreimageSize(bytes32) view returns (uint256)",
+  ];
+  const contract = new Contract("0x80", contractABI, provider);
+
+  async function fetchPreimageFromChain(hash: Uint8Array): Promise<Uint8Array> {
+    const hexHash = utils.hexlify(hash);
+    const preimage = await contract.getPreimage(utils.arrayify(hexHash));
+    return utils.arrayify(preimage);
+  }
+
+  // TODO: Ugly! Take hash?
   function fetchPreimageFromServer(url: string): Promise<Uint8Array> {
     return fetch(url)
       .then((response) => {
@@ -92,7 +112,7 @@ export function createCartridgeSystem(layer: PhaserLayer) {
   });
 
   let playing = false;
-  input.pointerdown$.subscribe((event) => {
+  input.pointerdown$.subscribe(async (event) => {
     if (playing) return;
     playing = true;
     const pointer = event.pointer;
@@ -112,10 +132,14 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     const dynHash = hexStringToUint8Array(cartridge.dynHash as string);
 
     if (!cachedHashes.has(staticHash)) {
-      // ...
+      const preimage = await fetchPreimageFromChain(staticHash);
+      nes.setPreimage(staticHash, preimage);
+      cachedHashes.add(staticHash);
     }
     if (!cachedHashes.has(dynHash)) {
-      // ...
+      const preimage = await fetchPreimageFromChain(dynHash);
+      nes.setPreimage(dynHash, preimage);
+      cachedHashes.add(dynHash);
     }
 
     nes.setCartridge(staticHash, dynHash);
@@ -123,7 +147,14 @@ export function createCartridgeSystem(layer: PhaserLayer) {
 
     setTimeout(() => {
       nes.pause();
-      playCartridge(BigInt(entity), []);
+      const activity: ActionStruct[] = [
+        {
+          button: 0n,
+          press: false,
+          duration: 100000n,
+        }
+      ]
+      playCartridge(BigInt(entity), activity);
       playing = false;
     }, 18000);
   });
