@@ -36,8 +36,6 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     },
   } = layer;
 
-  // Ugly! Ugly! Ultra ugly!
-
   const provider = new WebSocketProvider("ws://localhost:9546");
   const contractABI = [
     "function getPreimageSize(bytes32) view returns (uint256)",
@@ -48,13 +46,6 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     contractABI,
     provider
   );
-
-  // We have to provably-trivial problems.
-  // 1. PI fetching fails, possibly because they are to big. Should have merkleized!
-  // 2. Local and remote execution don't quite match. Something is wrong with activity recording/replaying.
-  const hashOverrides = new Map<Entity, string>();
-  // This is so ugly.
-  let lastHash: string;
 
   async function fetchPreimageFromChain(hash: Uint8Array): Promise<Uint8Array> {
     const hexHash = utils.hexlify(hash);
@@ -68,7 +59,7 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     }
   }
 
-  // TODO: Ugly! Take hash?
+  // TODO: Take Uint8Array [?]
   function fetchPreimageFromServer(url: string): Promise<Uint8Array> {
     return fetch(url)
       .then((response) => {
@@ -107,8 +98,6 @@ export function createCartridgeSystem(layer: PhaserLayer) {
   const preimagesToPreload = [marioStaticHash, marioDynHash];
 
   nes.start();
-
-  // TODO: Be less hacking about this
 
   // We load them from the server instead of the chain so we dev version works
   // without the custom chain.
@@ -149,21 +138,14 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     const cartridge = getComponentValueStrict(Cartridge, entity);
 
     const staticHash = hexStringToUint8Array(cartridge.staticHash);
-    let dynHash = hexStringToUint8Array(cartridge.dynHash);
+    const dynHash = hexStringToUint8Array(cartridge.dynHash);
 
-    if (hashOverrides.has(entity)) {
-      const override = hashOverrides.get(entity);
-      if (override !== undefined) {
-        dynHash = hexStringToUint8Array(override);
-      }
-    }
-
-    if (!cachedHashes.has(cartridge.staticHash)) {
-      console.log("fetching static hash", staticHash);
-      const preimage = await fetchPreimageFromChain(staticHash);
-      nes.setPreimage(staticHash, preimage);
-      cachedHashes.add(cartridge.staticHash);
-    }
+    // if (!cachedHashes.has(cartridge.staticHash)) {
+    //   console.log("fetching static hash", staticHash);
+    //   const preimage = await fetchPreimageFromChain(staticHash);
+    //   nes.setPreimage(staticHash, preimage);
+    //   cachedHashes.add(cartridge.staticHash);
+    // }
     if (!cachedHashes.has(cartridge.dynHash)) {
       console.log("fetching dyn hash", dynHash);
       const preimage = await fetchPreimageFromChain(dynHash);
@@ -179,7 +161,7 @@ export function createCartridgeSystem(layer: PhaserLayer) {
       const activityStr = new TextDecoder().decode(activity);
       const activityJson = JSON.parse(activityStr);
       nes.pause();
-      // TODO: Hashes don't match [!]
+      // TODO: Do hashes match?
       cachedHashes.add(activityJson.Hash as string);
       const formattedActivity: ActionStruct[] = Array(
         activityJson.Activity.length
@@ -193,27 +175,12 @@ export function createCartridgeSystem(layer: PhaserLayer) {
             duration: BigInt(action.Duration),
           };
         });
-      lastHash = activityJson.Hash as string;
       playCartridge(BigInt(entity), formattedActivity);
       playing = false;
-    }, 9000);
+    }, 3000);
   });
 
   // Utils
-
-  // function hexToUint8Array(hexString: string): Uint8Array {
-  //   if (hexString.length % 2 !== 0) {
-  //     throw new Error("Invalid hex string");
-  //   }
-  //   if (hexString.substring(0, 2) === "0x") {
-  //     hexString = hexString.substring(2);
-  //   }
-  //   const bytes = new Uint8Array(hexString.length / 2);
-  //   for (let i = 0; i < hexString.length; i += 2) {
-  //     bytes[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
-  //   }
-  //   return bytes;
-  // }
 
   function numToEntity(id: bigint): Entity {
     let idStr = id.toString(16);
@@ -263,9 +230,6 @@ export function createCartridgeSystem(layer: PhaserLayer) {
   // Systems
 
   defineEnterSystem(world, [Has(Cartridge)], ({ entity }) => {
-    if (lastHash) {
-      hashOverrides.set(entity, lastHash);
-    }
     const pos = cartridgePosition(entity);
     setComponent(positionComponent, entity, pos);
     const cartridge = getComponentValueStrict(Cartridge, entity);
