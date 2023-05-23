@@ -39,8 +39,8 @@ export function createCartridgeSystem(layer: PhaserLayer) {
 
   const provider = new WebSocketProvider("ws://localhost:9546");
   const contractABI = [
-    "function getPreimage(bytes32) view returns (bytes memory)",
     "function getPreimageSize(bytes32) view returns (uint256)",
+    "function getPreimage(uint256, bytes32) view returns (bytes memory)",
   ];
   const contract = new Contract(
     "0x0000000000000000000000000000000000000080",
@@ -50,7 +50,9 @@ export function createCartridgeSystem(layer: PhaserLayer) {
 
   async function fetchPreimageFromChain(hash: Uint8Array): Promise<Uint8Array> {
     const hexHash = utils.hexlify(hash);
-    const preimage = await contract.getPreimage(utils.arrayify(hexHash));
+    const arrHash = utils.arrayify(hexHash);
+    const size = await contract.getPreimageSize(arrHash);
+    const preimage = await contract.getPreimage(size, arrHash);
     return utils.arrayify(preimage);
   }
 
@@ -131,7 +133,7 @@ export function createCartridgeSystem(layer: PhaserLayer) {
 
     if (playing) return;
     playing = true;
-    
+
     const cartridge = getComponentValueStrict(Cartridge, entity);
 
     const staticHash = hexStringToUint8Array(cartridge.staticHash);
@@ -154,15 +156,23 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     nes.unpause();
 
     setTimeout(() => {
+      const activity = nes.getActivity();
+      const activityStr = new TextDecoder().decode(activity);
+      const activityJson = JSON.parse(activityStr);
+      console.log(activityJson)
       nes.pause();
-      const activity: ActionStruct[] = [
-        {
-          button: 0n,
-          press: false,
-          duration: 100000n,
-        },
-      ];
-      playCartridge(BigInt(entity), activity);
+      cachedHashes.add(activityJson.Hash);
+      const formatedActivity: ActionStruct[] = Array(activityJson.Activity.length).fill(0).map((_, i) => {
+        const action = activityJson.Activity[i];
+        return {
+          button: BigInt(action.Button),
+          press: action.press,
+          duration: BigInt(action.Duration),
+        }
+      });
+      console.log(formatedActivity);
+
+      playCartridge(BigInt(entity), formatedActivity);
       playing = false;
     }, 1000);
   });
@@ -234,6 +244,7 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     const pos = cartridgePosition(entity);
     setComponent(positionComponent, entity, pos);
     const cartridge = getComponentValueStrict(Cartridge, entity);
+    console.log("cartridge", cartridge);
     const cartridgeObj = objectPool.get(entity, "Sprite");
     cartridgeObj.setComponent({
       id: "animation",
