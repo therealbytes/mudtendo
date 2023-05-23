@@ -4,6 +4,7 @@ import {
   defineSystem,
   getComponentValueStrict,
   getEntitiesWithValue,
+  getComponentEntities,
   hasComponent,
   setComponent,
   Entity,
@@ -25,7 +26,7 @@ export function createCartridgeSystem(layer: PhaserLayer) {
   const {
     world,
     networkLayer: {
-      components: { Cartridge, positionComponent },
+      components: { Cartridge, positionComponent, ID },
       systemCalls: { createCartridge, playCartridge },
       playerEntity,
       wasm: { api: nes },
@@ -48,12 +49,23 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     provider
   );
 
+  // We have to provably-trivial problems.
+  // 1. PI fetching fails, possibly because they are to big. Should have merkleized!
+  // 2. Local and remote execution don't quite match. Something is wrong with activity recording/replaying.
+  const hashOverrides = new Map<Entity, string>();
+  // This is so ugly.
+  let lastHash: string;
+
   async function fetchPreimageFromChain(hash: Uint8Array): Promise<Uint8Array> {
     const hexHash = utils.hexlify(hash);
     const arrHash = utils.arrayify(hexHash);
     const size = await contract.getPreimageSize(arrHash);
-    const preimage = await contract.getPreimage(size, arrHash);
-    return utils.arrayify(preimage);
+    try {
+      const preimage = await contract.getPreimage(size, arrHash);
+      return utils.arrayify(preimage);
+    } catch (e) {
+      return new Uint8Array();
+    }
   }
 
   // TODO: Ugly! Take hash?
@@ -137,7 +149,14 @@ export function createCartridgeSystem(layer: PhaserLayer) {
     const cartridge = getComponentValueStrict(Cartridge, entity);
 
     const staticHash = hexStringToUint8Array(cartridge.staticHash);
-    const dynHash = hexStringToUint8Array(cartridge.dynHash);
+    let dynHash = hexStringToUint8Array(cartridge.dynHash);
+
+    if (hashOverrides.has(entity)) {
+      const override = hashOverrides.get(entity);
+      if (override !== undefined) {
+        dynHash = hexStringToUint8Array(override);
+      }
+    }
 
     if (!cachedHashes.has(cartridge.staticHash)) {
       console.log("fetching static hash", staticHash);
@@ -159,22 +178,25 @@ export function createCartridgeSystem(layer: PhaserLayer) {
       const activity = nes.getActivity();
       const activityStr = new TextDecoder().decode(activity);
       const activityJson = JSON.parse(activityStr);
-      console.log(activityJson)
       nes.pause();
-      cachedHashes.add(activityJson.Hash);
-      const formatedActivity: ActionStruct[] = Array(activityJson.Activity.length).fill(0).map((_, i) => {
-        const action = activityJson.Activity[i];
-        return {
-          button: BigInt(action.Button),
-          press: action.press,
-          duration: BigInt(action.Duration),
-        }
-      });
-      console.log(formatedActivity);
-
-      playCartridge(BigInt(entity), formatedActivity);
+      // TODO: Hashes don't match [!]
+      cachedHashes.add(activityJson.Hash as string);
+      const formattedActivity: ActionStruct[] = Array(
+        activityJson.Activity.length
+      )
+        .fill(0)
+        .map((_, i) => {
+          const action = activityJson.Activity[i];
+          return {
+            button: BigInt(action.Button),
+            press: action.Press,
+            duration: BigInt(action.Duration),
+          };
+        });
+      lastHash = activityJson.Hash as string;
+      playCartridge(BigInt(entity), formattedActivity);
       playing = false;
-    }, 1000);
+    }, 9000);
   });
 
   // Utils
@@ -241,10 +263,12 @@ export function createCartridgeSystem(layer: PhaserLayer) {
   // Systems
 
   defineEnterSystem(world, [Has(Cartridge)], ({ entity }) => {
+    if (lastHash) {
+      hashOverrides.set(entity, lastHash);
+    }
     const pos = cartridgePosition(entity);
     setComponent(positionComponent, entity, pos);
     const cartridge = getComponentValueStrict(Cartridge, entity);
-    console.log("cartridge", cartridge);
     const cartridgeObj = objectPool.get(entity, "Sprite");
     cartridgeObj.setComponent({
       id: "animation",
