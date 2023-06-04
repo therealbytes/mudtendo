@@ -9,6 +9,7 @@ export const createNetworkLayer = async () => {
     network: { singletonEntity, playerEntity },
     systemCalls,
     wasm,
+    preimageRegistry,
   } = await setup();
 
   // Give components a Human-readable ID
@@ -23,5 +24,6 @@ export const createNetworkLayer = async () => {
     components,
     playerEntity,
     wasm,
+    preimageRegistry,
   };
 };
