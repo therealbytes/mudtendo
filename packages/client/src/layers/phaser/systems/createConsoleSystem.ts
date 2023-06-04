@@ -3,8 +3,8 @@ import {
   defineEnterSystem,
   defineSystem,
   getComponentValueStrict,
+  getComponentValue,
   getEntitiesWithValue,
-  getComponentEntities,
   hasComponent,
   setComponent,
   Entity,
@@ -15,57 +15,43 @@ import {
 } from "@latticexyz/phaserx";
 
 import { PhaserLayer } from "../createPhaserLayer";
-import { TILE_HEIGHT, TILE_WIDTH, Animations } from "../constants";
-import { hexStringToUint8Array } from "@latticexyz/utils";
+import { TILE_HEIGHT, TILE_WIDTH, Sprites } from "../constants";
+import {
+  hexStringToUint8Array,
+  Uint8ArrayToHexString,
+} from "@latticexyz/utils";
 import { ActionStruct } from "contracts/types/ethers-contracts/IWorld";
-import { providers, utils, Contract } from "ethers";
 
-const { WebSocketProvider } = providers;
+const marioStaticHash =
+  "0xda2437bb81b1a07d5e2832768ba41f1a43cf060ba5a2db3ac0265361220ed82c";
 
-export function createConsoleSystem(layer: PhaserLayer) {
+const marioDynHash =
+  "0x4123f2d81428f7090218f975b941122f3797aeb8f97bf7d1ef6e87491c920a5c";
+
+const preimagesToPreload = [marioStaticHash, marioDynHash];
+
+export async function createConsoleSystem(layer: PhaserLayer) {
   const {
     world,
     networkLayer: {
-      components: { Cartridge, positionComponent, ID },
+      components: { Cartridge, positionComponent, consoleStateComponent },
       systemCalls: { createCartridge, playCartridge },
-      playerEntity,
       wasm: { api: nes },
+      preimageRegistry,
     },
     scenes: {
-      Main: { objectPool, input, camera },
+      Main: { objectPool, input, camera, config },
     },
   } = layer;
 
-  const provider = new WebSocketProvider("ws://localhost:9546");
-  const contractABI = [
-    "function getPreimageSize(bytes32) view returns (uint256)",
-    "function getPreimage(uint256, bytes32) view returns (bytes memory)",
-  ];
-  const contract = new Contract(
-    "0x0000000000000000000000000000000000000080",
-    contractABI,
-    provider
-  );
-
-  async function fetchPreimageFromChain(hash: Uint8Array): Promise<Uint8Array> {
-    const hexHash = utils.hexlify(hash);
-    const arrHash = utils.arrayify(hexHash);
-    const size = await contract.getPreimageSize(arrHash);
-    try {
-      const preimage = await contract.getPreimage(size, arrHash);
-      return utils.arrayify(preimage);
-    } catch (e) {
-      return new Uint8Array();
-    }
-  }
-
-  // TODO: Take Uint8Array [?]
-  function fetchPreimageFromServer(url: string): Promise<Uint8Array> {
+  function fetchPreimageFromServer(hash: Uint8Array): Promise<Uint8Array> {
+    const hashHex = Uint8ArrayToHexString(hash);
+    const url = `public/preimages/${hashHex}.bin`;
     return fetch(url)
       .then((response) => {
         if (!response.ok) {
           if (response.status === 404) {
-            return new Blob(); // Return an empty Blob if the file is not found
+            return new Blob();
           }
           throw new Error("Network response was not ok");
         }
@@ -89,26 +75,23 @@ export function createConsoleSystem(layer: PhaserLayer) {
 
   const cachedHashes = new Set<string>();
 
-  const marioStaticHash =
-    "0xda2437bb81b1a07d5e2832768ba41f1a43cf060ba5a2db3ac0265361220ed82c";
-
-  const marioDynHash =
-    "0x4123f2d81428f7090218f975b941122f3797aeb8f97bf7d1ef6e87491c920a5c";
-
-  const preimagesToPreload = [marioStaticHash, marioDynHash];
-
+  setComponent(consoleStateComponent, "0x060D" as Entity, { paused: false });
   nes.start();
 
-  // We load them from the server instead of the chain so we dev version works
-  // without the custom chain.
-  for (const hash of preimagesToPreload) {
-    if (cachedHashes.has(hash)) return;
-    fetchPreimageFromServer(`public/preimages/${hash}.bin`).then((preimage) => {
+  // We preload the preimages from the server so we can develop without
+  // having to run the concrete chain.
+  for (const hashHex of preimagesToPreload) {
+    if (cachedHashes.has(hashHex)) return;
+    const hash = hexStringToUint8Array(hashHex);
+    await fetchPreimageFromServer(hash).then((preimage) => {
       if (preimage.length == 0) return;
-      cachedHashes.add(hash);
-      nes.setPreimage(hexStringToUint8Array(hash), preimage);
+      cachedHashes.add(hashHex);
+      nes.setPreimage(hash, preimage);
     });
   }
+
+  setComponent(consoleStateComponent, "0x060D" as Entity, { paused: false });
+  nes.pause();
 
   // Input
 
@@ -118,50 +101,61 @@ export function createConsoleSystem(layer: PhaserLayer) {
     createCartridge(marioStaticHash, marioDynHash);
   });
 
-  let playing = false;
   input.pointerdown$.subscribe(async (event) => {
     const pointer = event.pointer;
     if (pointer === undefined) return;
     if (!pointer.isDown) return;
+
     const x = pointer.worldX;
     const y = pointer.worldY;
     if (x === undefined || y === undefined) return;
     const tilePos = pixelCoordToTileCoord({ x, y }, TILE_WIDTH, TILE_HEIGHT);
+
     const entities = getEntitiesWithValue(positionComponent, tilePos);
     if (entities.size === 0) return;
     const entity = entities.values().next().value as Entity;
     if (!hasComponent(Cartridge, entity)) return;
 
-    if (playing) return;
-    playing = true;
+    const consoleState = getComponentValue(
+      consoleStateComponent,
+      "0x060d" as Entity
+    );
+
+    if (consoleState !== undefined && consoleState.paused) {
+      return;
+    }
 
     const cartridge = getComponentValueStrict(Cartridge, entity);
+    const staticHashHex = cartridge.staticHash;
+    const dynHashHex = cartridge.dynHash;
+    const staticHash = hexStringToUint8Array(staticHashHex);
+    const dynHash = hexStringToUint8Array(dynHashHex);
 
-    const staticHash = hexStringToUint8Array(cartridge.staticHash);
-    const dynHash = hexStringToUint8Array(cartridge.dynHash);
-
-    // if (!cachedHashes.has(cartridge.staticHash)) {
-    //   console.log("fetching static hash", staticHash);
-    //   const preimage = await fetchPreimageFromChain(staticHash);
-    //   nes.setPreimage(staticHash, preimage);
-    //   cachedHashes.add(cartridge.staticHash);
-    // }
-    if (!cachedHashes.has(cartridge.dynHash)) {
-      console.log("fetching dyn hash", dynHash);
-      const preimage = await fetchPreimageFromChain(dynHash);
+    if (!cachedHashes.has(staticHashHex)) {
+      console.log("Fetching static hash from chain", staticHash);
+      const preimage = await preimageRegistry.getPreimage(staticHash);
+      nes.setPreimage(staticHash, preimage);
+      cachedHashes.add(staticHashHex);
+    }
+    if (!cachedHashes.has(dynHashHex)) {
+      console.log("Fetching dyn hash from chain", dynHash);
+      const preimage = await preimageRegistry.getPreimage(staticHash);
       nes.setPreimage(dynHash, preimage);
-      cachedHashes.add(cartridge.dynHash);
+      cachedHashes.add(dynHashHex);
     }
 
     nes.setCartridge(staticHash, dynHash);
+    setComponent(consoleStateComponent, "0x060D" as Entity, { paused: false });
     nes.unpause();
 
     setTimeout(() => {
       const activity = nes.getActivity();
+      nes.pause();
+      setComponent(consoleStateComponent, "0x060D" as Entity, {
+        paused: true,
+      });
       const activityStr = new TextDecoder().decode(activity);
       const activityJson = JSON.parse(activityStr);
-      nes.pause();
-      // TODO: Do hashes match?
       cachedHashes.add(activityJson.Hash as string);
       const formattedActivity: ActionStruct[] = Array(
         activityJson.Activity.length
@@ -176,8 +170,7 @@ export function createConsoleSystem(layer: PhaserLayer) {
           };
         });
       playCartridge(BigInt(entity), formattedActivity);
-      playing = false;
-    }, 3000);
+    }, 5000);
   });
 
   // Utils
@@ -197,7 +190,7 @@ export function createConsoleSystem(layer: PhaserLayer) {
   }
 
   // UI layout
-  // TODO: better cartridge layout
+  // TODO: improve cartridge layout
 
   function cartridgePosition(entity: Entity): { x: number; y: number } {
     const cartridge = getComponentValueStrict(Cartridge, entity);
@@ -235,19 +228,18 @@ export function createConsoleSystem(layer: PhaserLayer) {
     const cartridge = getComponentValueStrict(Cartridge, entity);
     const cartridgeObj = objectPool.get(entity, "Sprite");
     cartridgeObj.setComponent({
-      id: "animation",
+      id: "texture",
       once: (sprite) => {
         sprite.setDepth(1);
+        let spriteData = config.sprites[Sprites.Cartridge];
         if (cartridge.parent === 0n) {
-          sprite.play(Animations.GenesisCartridge);
-        } else {
-          sprite.play(Animations.Cartridge);
+          spriteData = config.sprites[Sprites.Genesis];
         }
+        sprite.setTexture(spriteData.assetKey, spriteData.frame);
       },
     });
   });
 
-  // TODO: get value from update
   defineSystem(world, [Has(positionComponent)], ({ entity }) => {
     const tilePos = getComponentValueStrict(positionComponent, entity);
     const pixelPos = tileCoordToPixelCoord(tilePos, TILE_WIDTH, TILE_HEIGHT);
@@ -257,9 +249,7 @@ export function createConsoleSystem(layer: PhaserLayer) {
       id: "position",
       once: (sprite) => {
         sprite.setPosition(pixelPos.x, pixelPos.y);
-        if (cartridge.author === playerEntity && cartridge.parent === 0n) {
-          camera.centerOn(pixelPos.x, pixelPos.y);
-        }
+        camera.centerOn(pixelPos.x, pixelPos.y);
       },
     });
     if (cartridge.parent === 0n) {
@@ -277,10 +267,10 @@ export function createConsoleSystem(layer: PhaserLayer) {
     const lineEntity = ((entity as string) + "ffffffff") as Entity;
     const lineObj = objectPool.get(lineEntity, "Line");
     lineObj.setComponent({
-      id: "animation",
+      id: "line",
       once: (line) => {
         line.setDepth(0);
-        line.setStrokeStyle(4, 0xcccfc9);
+        line.setStrokeStyle(4, 0x4f4f68);
         line.setTo(
           parentPixelPos.x + TILE_WIDTH / 2,
           parentPixelPos.y + TILE_HEIGHT / 2,
