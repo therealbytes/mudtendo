@@ -11,8 +11,12 @@ export function createClientComponents({
     x: RecsType.Number,
     y: RecsType.Number,
   });
+  const consoleStateComponent = defineComponent(world, {
+    paused: RecsType.Boolean,
+  });
   return {
     positionComponent,
+    consoleStateComponent,
     ...components,
   };
 }
