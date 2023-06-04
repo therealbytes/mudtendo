@@ -1,10 +1,8 @@
 import { PhaserLayer } from "../createPhaserLayer";
 import { createCamera } from "./createCamera";
-import { createCartridgeSystem } from "./createCartridgeSystem";
-// import { createMapSystem } from "./createMapSystem";
+import { createConsoleSystem } from "./createConsoleSystem";
 
 export const registerSystems = (layer: PhaserLayer) => {
   createCamera(layer);
-  // createMapSystem(layer);
-  createCartridgeSystem(layer);
+  createConsoleSystem(layer);
 };

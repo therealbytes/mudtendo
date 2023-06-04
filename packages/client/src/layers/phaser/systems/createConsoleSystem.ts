@@ -22,7 +22,7 @@ import { providers, utils, Contract } from "ethers";
 
 const { WebSocketProvider } = providers;
 
-export function createCartridgeSystem(layer: PhaserLayer) {
+export function createConsoleSystem(layer: PhaserLayer) {
   const {
     world,
     networkLayer: {

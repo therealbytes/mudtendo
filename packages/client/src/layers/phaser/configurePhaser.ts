@@ -8,12 +8,12 @@ import {
 import worldTileset from "../../../public/assets/tilesets/world.png";
 import { TileAnimations, Tileset } from "../../artTypes/world";
 import {
+  Sprites,
   Assets,
   Maps,
   Scenes,
   TILE_HEIGHT,
   TILE_WIDTH,
-  Animations,
 } from "./constants";
 
 const ANIMATION_INTERVAL = 200;
@@ -56,29 +56,17 @@ export const phaserConfig = {
       maps: {
         [Maps.Main]: mainMap,
       },
-      sprites: {},
-      animations: [
-        {
-          key: Animations.GenesisCartridge,
+      sprites: {
+        [Sprites.Genesis]: {
           assetKey: Assets.MainAtlas,
-          startFrame: 0,
-          endFrame: 0,
-          frameRate: 1,
-          repeat: -1,
-          prefix: "sprites/cartridge/genesis/",
-          suffix: ".png",
+          frame: "sprites/cartridge/genesis/0.png",
         },
-        {
-          key: Animations.Cartridge,
+        [Sprites.Cartridge]: {
           assetKey: Assets.MainAtlas,
-          startFrame: 0,
-          endFrame: 0,
-          frameRate: 1,
-          repeat: -1,
-          prefix: "sprites/cartridge/cartridge/",
-          suffix: ".png",
+          frame: "sprites/cartridge/cartridge/0.png",
         },
-      ],
+      },
+      animations: [],
       tilesets: {
         Default: {
           assetKey: Assets.Tileset,
