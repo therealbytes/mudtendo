@@ -1,12 +1,7 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 export enum Tileset {
-  Grass = 0,
-  Mountain = 1,
-  Forest = 2,
-  BG = 3,
-  Genesis = 4,
-  Cartridge = 5,
+  BG = 0,
 }
 export enum TileAnimationKey {
 }
