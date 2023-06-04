@@ -6,13 +6,11 @@ export enum Maps {
   Main = "Main",
 }
 
-export enum Animations {
-  SwordsmanIdle = "SwordsmanIdle",
-  GenesisCartridge = "GenesisCartridge",
-  Cartridge = "Cartridge",
-}
+export enum Animations {}
+
 export enum Sprites {
-  Soldier,
+  Genesis = "Genesis",
+  Cartridge = "Cartridge",
 }
 
 export enum Assets {
