@@ -30,7 +30,6 @@
         padding: 0;
         border: none;
       }
-
       canvas.nes {
         position: fixed;
         top: 10px;
@@ -38,8 +37,11 @@
         border: 1px solid black;
         width: min(512px, 90vw);
         image-rendering: pixelated;
-        box-shadow: 5px 5px 2px 0px #c0c0c0;
         background-color: white;
+        opacity: 1.0;
+      }
+      canvas.nes.paused {
+        opacity: 0.5;
       }
     </style>
   </head>
