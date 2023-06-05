@@ -23,10 +23,10 @@ import {
 import { ActionStruct } from "contracts/types/ethers-contracts/IWorld";
 
 const marioStaticHash =
-  "0xda2437bb81b1a07d5e2832768ba41f1a43cf060ba5a2db3ac0265361220ed82c";
+  "0xd185234e8d133f80f8536bf3586474e9c21cf07dc1ac2d001b5651b038f20bc7";
 
 const marioDynHash =
-  "0x4123f2d81428f7090218f975b941122f3797aeb8f97bf7d1ef6e87491c920a5c";
+  "0x03a3fc1efd5be8218b6e37aabc279b2a971825f50f5a25edd3fc9dcdc3455d42";
 
 const preimagesToPreload = [marioStaticHash, marioDynHash];
 
@@ -132,21 +132,23 @@ export async function createConsoleSystem(layer: PhaserLayer) {
     const dynHash = hexStringToUint8Array(dynHashHex);
 
     if (!cachedHashes.has(staticHashHex)) {
-      console.log("Fetching static hash from chain", staticHash);
+      console.log("Fetching static hash from chain", staticHashHex);
       const preimage = await preimageRegistry.getPreimage(staticHash);
+      console.log("Preimage length:", preimage.length);
       nes.setPreimage(staticHash, preimage);
       cachedHashes.add(staticHashHex);
     }
     if (!cachedHashes.has(dynHashHex)) {
-      console.log("Fetching dyn hash from chain", dynHash);
-      const preimage = await preimageRegistry.getPreimage(staticHash);
+      console.log("Fetching dyn hash from chain", dynHashHex);
+      const preimage = await preimageRegistry.getPreimage(dynHash);
+      console.log("Preimage length:", preimage.length);
       nes.setPreimage(dynHash, preimage);
       cachedHashes.add(dynHashHex);
     }
 
-    nes.setCartridge(staticHash, dynHash);
     setComponent(consoleStateComponent, "0x060D" as Entity, { paused: false });
     nes.unpause();
+    nes.setCartridge(staticHash, dynHash);
 
     setTimeout(() => {
       const activity = nes.getActivity();
@@ -156,7 +158,9 @@ export async function createConsoleSystem(layer: PhaserLayer) {
       });
       const activityStr = new TextDecoder().decode(activity);
       const activityJson = JSON.parse(activityStr);
-      cachedHashes.add(activityJson.Hash as string);
+      const newDynHashHex = activityJson.Hash as string;
+      console.log("New dyn hash", newDynHashHex);
+      cachedHashes.add(newDynHashHex);
       const formattedActivity: ActionStruct[] = Array(
         activityJson.Activity.length
       )
@@ -170,7 +174,7 @@ export async function createConsoleSystem(layer: PhaserLayer) {
           };
         });
       playCartridge(BigInt(entity), formattedActivity);
-    }, 5000);
+    }, 6000);
   });
 
   // Utils
@@ -226,6 +230,7 @@ export async function createConsoleSystem(layer: PhaserLayer) {
     const pos = cartridgePosition(entity);
     setComponent(positionComponent, entity, pos);
     const cartridge = getComponentValueStrict(Cartridge, entity);
+    console.log("Cartridge", cartridge);
     const cartridgeObj = objectPool.get(entity, "Sprite");
     cartridgeObj.setComponent({
       id: "texture",
