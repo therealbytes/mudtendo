@@ -158,9 +158,9 @@ export async function createConsoleSystem(layer: PhaserLayer) {
       });
       const activityStr = new TextDecoder().decode(activity);
       const activityJson = JSON.parse(activityStr);
-      const newDynHashHex = activityJson.Hash as string;
-      console.log("New dyn hash", newDynHashHex);
-      cachedHashes.add(newDynHashHex);
+      // const newDynHashHex = activityJson.Hash as string;
+      // console.log("New dyn hash", newDynHashHex);
+      // cachedHashes.add(newDynHashHex);
       const formattedActivity: ActionStruct[] = Array(
         activityJson.Activity.length
       )
