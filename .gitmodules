@@ -1,0 +1,4 @@
+[submodule "optimism"]
+	path = optimism
+	url = https://github.com/therealbytes/optimism
+	branch = neschain-geth
