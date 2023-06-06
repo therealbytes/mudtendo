@@ -132,14 +132,14 @@ export async function createConsoleSystem(layer: PhaserLayer) {
     const dynHash = hexStringToUint8Array(dynHashHex);
 
     if (!cachedHashes.has(staticHashHex)) {
-      console.log("Fetching static hash from chain", staticHashHex);
+      console.log("Fetching static hash from chain:", staticHashHex);
       const preimage = await preimageRegistry.getPreimage(staticHash);
       console.log("Preimage length:", preimage.length);
       nes.setPreimage(staticHash, preimage);
       cachedHashes.add(staticHashHex);
     }
     if (!cachedHashes.has(dynHashHex)) {
-      console.log("Fetching dyn hash from chain", dynHashHex);
+      console.log("Fetching dyn hash from chain:", dynHashHex);
       const preimage = await preimageRegistry.getPreimage(dynHash);
       console.log("Preimage length:", preimage.length);
       nes.setPreimage(dynHash, preimage);
@@ -159,7 +159,7 @@ export async function createConsoleSystem(layer: PhaserLayer) {
       const activityStr = new TextDecoder().decode(activity);
       const activityJson = JSON.parse(activityStr);
       // const newDynHashHex = activityJson.Hash as string;
-      // console.log("New dyn hash", newDynHashHex);
+      // console.log("New dyn hash:", newDynHashHex);
       // cachedHashes.add(newDynHashHex);
       const formattedActivity: ActionStruct[] = Array(
         activityJson.Activity.length
