@@ -13,10 +13,10 @@ export function createSystemCalls(
     staticHash: utils.BytesLike,
     dynHash: utils.BytesLike
   ) => {
-    worldSend("createCartridge", [staticHash, dynHash, { gasLimit: 15000000 }]);
+    worldSend("createCartridge", [staticHash, dynHash, { gasLimit: 1000000 }]);
   };
   const playCartridge = async (id: bigint, activity: ActionStruct[]) => {
-    worldSend("playCartridge", [id, activity, { gasLimit: 15000000 }]);
+    worldSend("playCartridge", [id, activity, { gasLimit: 25000000 }]);
   };
   return {
     playCartridge,
