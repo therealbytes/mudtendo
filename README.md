@@ -26,7 +26,7 @@ Mudtendo is a relatively simple <a href="https://github.com/latticexyz/mud">MUD<
 
 **[NES Emulator](https://github.com/therealbytes/nes)**
 
-A NES emulator written in Go with a browser interface compiled to WebAssembly. The emulator is part of both the blockchain (native, see below) and in the frontend (WebAssembly).
+A NES emulator written in Go with a browser interface compiled to WebAssembly. The emulator is part of both the blockchain (native, see below) and the web client (WebAssembly).
 
 **[NES Concrete App-chain](https://github.com/therealbytes/neschain)**
 
