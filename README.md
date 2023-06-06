@@ -14,10 +14,10 @@ and
 </div>
 
 > The final product of the Mudtendo project is a MUD app where users can play old Nintendo games (and anything else the NES console can run) with a couple of twists:
-> 
+>
 > - Gameplay takes place in very short sessions, each of which gets sent to the chain for validation and creates a "checkpoint" of its end state.
 > - Any player can start a game from any checkpoint, past or present, that any other player has created.
-> 
+>
 > You can restart your game of Super Mario at the last checkpoint before you died, or you can start it from someone else's checkpoint if that's more interesting. It's like one of those confusing time-travel movies--you create an alternative game reality with every move.
 
 ## How it's made
