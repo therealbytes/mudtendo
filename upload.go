@@ -23,7 +23,7 @@ var (
 	RpcUrl        = "http://localhost:9545"
 	GasLimit      = uint64(10_000_000)
 	GasPrice      = big.NewInt(1_000_000_000)
-	PrivateKeyHex = "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
+	PrivateKeyHex = "dbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97"
 	ChainID       = big.NewInt(901)
 )
 
