@@ -36,7 +36,7 @@ The Mudtendo contracts use the built-in emulator to validate player activity.
 
 ## How to run Mudtendo locally
 
-Run a local Optimism devnet using `ghcr.io/therealbytes/neschain-geth` as the L2 execution engine, exposing the WebSocket RPC on port 9546. See [/optimism](/optimism/).
+Run a local Optimism devnet using `ghcr.io/therealbytes/neschain-geth` as the L2 execution engine, exposing the WebSocket RPC on port 9546. See [/optimism](https://github.com/therealbytes/optimism/tree/neschain-geth).
 
 Then deploy the contracts and start the web client with MUD.
 
