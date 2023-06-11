@@ -7,13 +7,13 @@ export type SystemCalls = ReturnType<typeof createSystemCalls>;
 
 export function createSystemCalls(
   { worldSend }: SetupNetworkResult,
-  { }: ClientComponents
+  {}: ClientComponents
 ) {
   const createCartridge = async (
-    staticHash: utils.BytesLike,
-    dynHash: utils.BytesLike
+    staticRoot: utils.BytesLike,
+    dynRoot: utils.BytesLike
   ) => {
-    worldSend("createCartridge", [staticHash, dynHash, { gasLimit: 1000000 }]);
+    worldSend("createCartridge", [staticRoot, dynRoot, { gasLimit: 1000000 }]);
   };
   const playCartridge = async (id: bigint, activity: ActionStruct[]) => {
     worldSend("playCartridge", [id, activity, { gasLimit: 25000000 }]);

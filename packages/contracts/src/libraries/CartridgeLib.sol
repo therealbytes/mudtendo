@@ -5,7 +5,7 @@ import { Cartridge, CartridgeData } from "../codegen/Tables.sol";
 import { ID } from "../codegen/Tables.sol";
 import { NES, Action, NES_ADDRESS } from "neschain/NES.sol";
 
-bool constant PC_ON = true;
+bool constant PC_ON = false;
 
 library CartridgeLib {
     function play(address author, uint256 id, Action[] memory activity) internal returns (uint256) {
