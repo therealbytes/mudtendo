@@ -22,13 +22,13 @@ import {
 } from "@latticexyz/utils";
 import { ActionStruct } from "contracts/types/ethers-contracts/IWorld";
 
-const marioStaticHash =
+const marioStaticRoot =
   "0xd185234e8d133f80f8536bf3586474e9c21cf07dc1ac2d001b5651b038f20bc7";
 
-const marioDynHash =
+const marioDynRoot =
   "0x03a3fc1efd5be8218b6e37aabc279b2a971825f50f5a25edd3fc9dcdc3455d42";
 
-const preimagesToPreload = [marioStaticHash, marioDynHash];
+const preimagesToPreload = [marioStaticRoot, marioDynRoot];
 
 export async function createConsoleSystem(layer: PhaserLayer) {
   const {
@@ -98,7 +98,7 @@ export async function createConsoleSystem(layer: PhaserLayer) {
   input.keyboard$.subscribe((event) => {
     if (event.keyCode != 32) return;
     if (!event.isDown) return;
-    createCartridge(marioStaticHash, marioDynHash);
+    createCartridge(marioStaticRoot, marioDynRoot);
   });
 
   input.pointerdown$.subscribe(async (event) => {
@@ -126,29 +126,29 @@ export async function createConsoleSystem(layer: PhaserLayer) {
     }
 
     const cartridge = getComponentValueStrict(Cartridge, entity);
-    const staticHashHex = cartridge.staticHash;
-    const dynHashHex = cartridge.dynHash;
-    const staticHash = hexStringToUint8Array(staticHashHex);
-    const dynHash = hexStringToUint8Array(dynHashHex);
+    const staticRootHex = cartridge.staticRoot;
+    const dynRootHex = cartridge.dynRoot;
+    const staticRoot = hexStringToUint8Array(staticRootHex);
+    const dynRoot = hexStringToUint8Array(dynRootHex);
 
-    if (!cachedHashes.has(staticHashHex)) {
-      console.log("Fetching static hash from chain:", staticHashHex);
-      const preimage = await preimageRegistry.getPreimage(staticHash);
+    if (!cachedHashes.has(staticRootHex)) {
+      console.log("Fetching static root from chain:", staticRootHex);
+      const preimage = await preimageRegistry.getPreimage(staticRoot);
       console.log("Preimage length:", preimage.length);
-      nes.setPreimage(staticHash, preimage);
-      cachedHashes.add(staticHashHex);
+      nes.setPreimage(staticRoot, preimage);
+      cachedHashes.add(staticRootHex);
     }
-    if (!cachedHashes.has(dynHashHex)) {
-      console.log("Fetching dyn hash from chain:", dynHashHex);
-      const preimage = await preimageRegistry.getPreimage(dynHash);
+    if (!cachedHashes.has(dynRootHex)) {
+      console.log("Fetching dyn root from chain:", dynRootHex);
+      const preimage = await preimageRegistry.getPreimage(dynRoot);
       console.log("Preimage length:", preimage.length);
-      nes.setPreimage(dynHash, preimage);
-      cachedHashes.add(dynHashHex);
+      nes.setPreimage(dynRoot, preimage);
+      cachedHashes.add(dynRootHex);
     }
 
     setComponent(consoleStateComponent, "0x060D" as Entity, { paused: false });
     nes.unpause();
-    nes.setCartridge(staticHash, dynHash);
+    nes.setCartridge(staticRoot, dynRoot);
 
     setTimeout(() => {
       const activity = nes.getActivity();
@@ -158,9 +158,9 @@ export async function createConsoleSystem(layer: PhaserLayer) {
       });
       const activityStr = new TextDecoder().decode(activity);
       const activityJson = JSON.parse(activityStr);
-      // const newDynHashHex = activityJson.Hash as string;
-      // console.log("New dyn hash:", newDynHashHex);
-      // cachedHashes.add(newDynHashHex);
+      // const newDynRootHex = activityJson.Hash as string;
+      // console.log("New dyn hash:", newDynRootHex);
+      // cachedHashes.add(newDynRootHex);
       const formattedActivity: ActionStruct[] = Array(
         activityJson.Activity.length
       )
