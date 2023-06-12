@@ -13,18 +13,10 @@ export function createSystemCalls(
     staticRoot: utils.BytesLike,
     dynRoot: utils.BytesLike
   ) => {
-    worldSend("createCartridge", [
-      staticRoot,
-      dynRoot,
-      { gasLimit: 300000, maxFeePerGas: 10000000000, maxPriorityFeePerGas: 10000000000 },
-    ]);
+    worldSend("createCartridge", [staticRoot, dynRoot, { gasLimit: 300000 }]);
   };
   const playCartridge = async (id: bigint, activity: ActionStruct[]) => {
-    worldSend("playCartridge", [
-      id,
-      activity,
-      { gasLimit: 10000000, maxFeePerGas: 10000000000, maxPriorityFeePerGas: 10000000000 },
-    ]);
+    worldSend("playCartridge", [id, activity, { gasLimit: 10000000 }]);
   };
   return {
     playCartridge,
