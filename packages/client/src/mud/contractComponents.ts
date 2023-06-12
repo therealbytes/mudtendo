@@ -27,8 +27,8 @@ export function defineContractComponents(world: World) {
         {
           author: RecsType.String,
           parent: RecsType.BigInt,
-          staticHash: RecsType.String,
-          dynHash: RecsType.String,
+          staticRoot: RecsType.String,
+          dynRoot: RecsType.String,
         },
         {
           metadata: {

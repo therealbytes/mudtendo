@@ -15,8 +15,8 @@ export default mudConfig({
       schema: {
         author: "address",
         parent: "uint256",
-        staticHash: "bytes32",
-        dynHash: "bytes32",
+        staticRoot: "bytes32",
+        dynRoot: "bytes32",
       },
     },
   },
