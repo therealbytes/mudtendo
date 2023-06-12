@@ -23,8 +23,8 @@ bytes32 constant CartridgeTableId = _tableId;
 struct CartridgeData {
   address author;
   uint256 parent;
-  bytes32 staticHash;
-  bytes32 dynHash;
+  bytes32 staticRoot;
+  bytes32 dynRoot;
 }
 
 library Cartridge {
@@ -51,8 +51,8 @@ library Cartridge {
     string[] memory _fieldNames = new string[](4);
     _fieldNames[0] = "author";
     _fieldNames[1] = "parent";
-    _fieldNames[2] = "staticHash";
-    _fieldNames[3] = "dynHash";
+    _fieldNames[2] = "staticRoot";
+    _fieldNames[3] = "dynRoot";
     return ("Cartridge", _fieldNames);
   }
 
@@ -146,8 +146,8 @@ library Cartridge {
     _store.setField(_tableId, _keyTuple, 1, abi.encodePacked((parent)));
   }
 
-  /** Get staticHash */
-  function getStaticHash(uint256 id) internal view returns (bytes32 staticHash) {
+  /** Get staticRoot */
+  function getStaticRoot(uint256 id) internal view returns (bytes32 staticRoot) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = bytes32(uint256((id)));
 
@@ -155,8 +155,8 @@ library Cartridge {
     return (Bytes.slice32(_blob, 0));
   }
 
-  /** Get staticHash (using the specified store) */
-  function getStaticHash(IStore _store, uint256 id) internal view returns (bytes32 staticHash) {
+  /** Get staticRoot (using the specified store) */
+  function getStaticRoot(IStore _store, uint256 id) internal view returns (bytes32 staticRoot) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = bytes32(uint256((id)));
 
@@ -164,24 +164,24 @@ library Cartridge {
     return (Bytes.slice32(_blob, 0));
   }
 
-  /** Set staticHash */
-  function setStaticHash(uint256 id, bytes32 staticHash) internal {
+  /** Set staticRoot */
+  function setStaticRoot(uint256 id, bytes32 staticRoot) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = bytes32(uint256((id)));
 
-    StoreSwitch.setField(_tableId, _keyTuple, 2, abi.encodePacked((staticHash)));
+    StoreSwitch.setField(_tableId, _keyTuple, 2, abi.encodePacked((staticRoot)));
   }
 
-  /** Set staticHash (using the specified store) */
-  function setStaticHash(IStore _store, uint256 id, bytes32 staticHash) internal {
+  /** Set staticRoot (using the specified store) */
+  function setStaticRoot(IStore _store, uint256 id, bytes32 staticRoot) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = bytes32(uint256((id)));
 
-    _store.setField(_tableId, _keyTuple, 2, abi.encodePacked((staticHash)));
+    _store.setField(_tableId, _keyTuple, 2, abi.encodePacked((staticRoot)));
   }
 
-  /** Get dynHash */
-  function getDynHash(uint256 id) internal view returns (bytes32 dynHash) {
+  /** Get dynRoot */
+  function getDynRoot(uint256 id) internal view returns (bytes32 dynRoot) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = bytes32(uint256((id)));
 
@@ -189,8 +189,8 @@ library Cartridge {
     return (Bytes.slice32(_blob, 0));
   }
 
-  /** Get dynHash (using the specified store) */
-  function getDynHash(IStore _store, uint256 id) internal view returns (bytes32 dynHash) {
+  /** Get dynRoot (using the specified store) */
+  function getDynRoot(IStore _store, uint256 id) internal view returns (bytes32 dynRoot) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = bytes32(uint256((id)));
 
@@ -198,20 +198,20 @@ library Cartridge {
     return (Bytes.slice32(_blob, 0));
   }
 
-  /** Set dynHash */
-  function setDynHash(uint256 id, bytes32 dynHash) internal {
+  /** Set dynRoot */
+  function setDynRoot(uint256 id, bytes32 dynRoot) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = bytes32(uint256((id)));
 
-    StoreSwitch.setField(_tableId, _keyTuple, 3, abi.encodePacked((dynHash)));
+    StoreSwitch.setField(_tableId, _keyTuple, 3, abi.encodePacked((dynRoot)));
   }
 
-  /** Set dynHash (using the specified store) */
-  function setDynHash(IStore _store, uint256 id, bytes32 dynHash) internal {
+  /** Set dynRoot (using the specified store) */
+  function setDynRoot(IStore _store, uint256 id, bytes32 dynRoot) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = bytes32(uint256((id)));
 
-    _store.setField(_tableId, _keyTuple, 3, abi.encodePacked((dynHash)));
+    _store.setField(_tableId, _keyTuple, 3, abi.encodePacked((dynRoot)));
   }
 
   /** Get the full data */
@@ -233,8 +233,8 @@ library Cartridge {
   }
 
   /** Set the full data using individual values */
-  function set(uint256 id, address author, uint256 parent, bytes32 staticHash, bytes32 dynHash) internal {
-    bytes memory _data = encode(author, parent, staticHash, dynHash);
+  function set(uint256 id, address author, uint256 parent, bytes32 staticRoot, bytes32 dynRoot) internal {
+    bytes memory _data = encode(author, parent, staticRoot, dynRoot);
 
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = bytes32(uint256((id)));
@@ -248,10 +248,10 @@ library Cartridge {
     uint256 id,
     address author,
     uint256 parent,
-    bytes32 staticHash,
-    bytes32 dynHash
+    bytes32 staticRoot,
+    bytes32 dynRoot
   ) internal {
-    bytes memory _data = encode(author, parent, staticHash, dynHash);
+    bytes memory _data = encode(author, parent, staticRoot, dynRoot);
 
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = bytes32(uint256((id)));
@@ -261,12 +261,12 @@ library Cartridge {
 
   /** Set the full data using the data struct */
   function set(uint256 id, CartridgeData memory _table) internal {
-    set(id, _table.author, _table.parent, _table.staticHash, _table.dynHash);
+    set(id, _table.author, _table.parent, _table.staticRoot, _table.dynRoot);
   }
 
   /** Set the full data using the data struct (using the specified store) */
   function set(IStore _store, uint256 id, CartridgeData memory _table) internal {
-    set(_store, id, _table.author, _table.parent, _table.staticHash, _table.dynHash);
+    set(_store, id, _table.author, _table.parent, _table.staticRoot, _table.dynRoot);
   }
 
   /** Decode the tightly packed blob using this table's schema */
@@ -275,19 +275,19 @@ library Cartridge {
 
     _table.parent = (uint256(Bytes.slice32(_blob, 20)));
 
-    _table.staticHash = (Bytes.slice32(_blob, 52));
+    _table.staticRoot = (Bytes.slice32(_blob, 52));
 
-    _table.dynHash = (Bytes.slice32(_blob, 84));
+    _table.dynRoot = (Bytes.slice32(_blob, 84));
   }
 
   /** Tightly pack full data using this table's schema */
   function encode(
     address author,
     uint256 parent,
-    bytes32 staticHash,
-    bytes32 dynHash
+    bytes32 staticRoot,
+    bytes32 dynRoot
   ) internal view returns (bytes memory) {
-    return abi.encodePacked(author, parent, staticHash, dynHash);
+    return abi.encodePacked(author, parent, staticRoot, dynRoot);
   }
 
   /** Encode keys as a bytes32 array using this table's schema */

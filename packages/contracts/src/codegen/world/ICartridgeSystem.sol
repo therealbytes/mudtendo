@@ -6,7 +6,7 @@ pragma solidity >=0.8.0;
 import { Action } from "./../../libraries/CartridgeLib.sol";
 
 interface ICartridgeSystem {
-  function createCartridge(bytes32 staticHash, bytes32 dynHash) external;
+  function createCartridge(bytes32 staticRoot, bytes32 dynRoot) external;
 
   function playCartridge(uint256 id, Action[] memory activity) external;
 }
